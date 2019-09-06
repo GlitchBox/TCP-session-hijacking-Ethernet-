@@ -1,0 +1,2 @@
+IPPROTO_RAW is a send only protocol.
+If IPPROTO_RAW is set then IP_HDRINCL need not be set. This option lets us build IP fragment from the scratch.
